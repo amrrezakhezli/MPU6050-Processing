@@ -242,27 +242,28 @@ void loop() {
             Serial.print("\tCount: ");
             Serial.println(count);
 
-/*
+
             // display real acceleration, adjusted to remove gravity
             mpu.dmpGetQuaternion(&q, fifoBuffer);
             mpu.dmpGetAccel(&aa, fifoBuffer);
             mpu.dmpGetGravity(&gravity, &q);
             mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-            Serial.print("areal\t");
-            Serial.print(aaReal.x);
-            Serial.print("\t");
-            Serial.print(aaReal.y);
-            Serial.print("\t");
-            Serial.print(aaReal.z);
-            Serial.print("\t");
-
-            Serial.print("Count: ");
-            Serial.println(count);
+//            Serial.print("areal\t");
+//            Serial.print(aaReal.x);
+//            Serial.print("\t");
+//            Serial.print(aaReal.y);
+//            Serial.print("\t");
+//            Serial.print(aaReal.z);
+//            Serial.print("\t");
   
         // Set acceleration values here
-        dx = aaReal.x - tempx;
-        dy = ay - tempy;
-        dz = az - tempz;
+        accelX = aaReal.x;
+        accelY = aaReal.y;
+        accelZ = aaReal.z;
+        dx = abs(accelX) - abs(tempx);
+        dy = abs(accelY) - abs(tempy);
+        dz = abs(accelZ) - abs(tempz);
+        
         dx = (dx/10);               
         int modx = dx%10;
         dx = dx-modx;
@@ -273,10 +274,10 @@ void loop() {
         int modz = dz%10;
         dz = dz-modz;
     
-        tempx = ax;
-        tempy = ay;
-        tempz = az;
- */   
+        tempx = accelX;
+        tempy = accelY;
+        tempz = accelZ;
+           
         if(count < calibrateCount) {
           count++;
           if(count%100 < 50) {
@@ -298,9 +299,11 @@ void loop() {
           digitalWrite(level, LOW); 
           setRef = true;       
         } else {
-          //Test to see if moving here
-          
-          if(abs(abs(xDeg)-abs(refX)) < 8 && abs(abs(zDeg)-abs(refZ)) < 8) {
+          if(abs(dx) > 20 || abs(dy) > 20 || abs(dz) > 20) {
+            digitalWrite(tilted, LOW);
+            digitalWrite(moving, HIGH);
+            digitalWrite(level, LOW);
+          } else if(abs(abs(zDeg)-abs(refZ)) < 8) {       //abs(abs(xDeg)-abs(refX)) < 8 && 
             digitalWrite(tilted, LOW);
             digitalWrite(moving, LOW);
             digitalWrite(level, HIGH);
@@ -309,37 +312,15 @@ void loop() {
             digitalWrite(moving, LOW);
             digitalWrite(level, LOW);
           }
+          /*
+          else if(abs(abs(xDeg)-abs(refX)) > 15) {
+            digitalWrite(tilted, HIGH);
+            digitalWrite(moving, LOW);
+            digitalWrite(level, LOW);
+          } 
+           */
         }
-
-            /*
-             // display real acceleration, adjusted to remove gravity
-            mpu.dmpGetQuaternion(&q, fifoBuffer);
-            mpu.dmpGetAccel(&aa, fifoBuffer);
-            mpu.dmpGetGravity(&gravity, &q);
-            mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-            Serial.print("areal\t");
-            Serial.print(aaReal.x);
-            Serial.print("\t");
-            Serial.print(aaReal.y);
-            Serial.print("\t");
-            Serial.println(aaReal.z);
-            */
-
-            /*
-            // display initial world-frame acceleration, adjusted to remove gravity
-            // and rotated based on known orientation from quaternion
-            mpu.dmpGetQuaternion(&q, fifoBuffer);
-            mpu.dmpGetAccel(&aa, fifoBuffer);
-            mpu.dmpGetGravity(&gravity, &q);
-            mpu.dmpGetLinearAccel(&aaReal, &aa, &gravity);
-            mpu.dmpGetLinearAccelInWorld(&aaWorld, &aaReal, &q);
-            Serial.print("aworld\t");
-            Serial.print(aaWorld.x);
-            Serial.print("\t");
-            Serial.print(aaWorld.y);
-            Serial.print("\t");
-            Serial.println(aaWorld.z);
-            */
+        
 
         // blink LED to indicate activity
         blinkState = !blinkState;
